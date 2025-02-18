@@ -1,70 +1,106 @@
-# Getting Started with Create React App
+# Equity Calculator
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This application is designed to help teams manage and calculate the equity allocation across various team members, pools, and contribution areas. It includes several components such as workspaces, team details, member management, and reports generation. This system also supports tracking contributions and creating visual reports, including pie charts, for better equity distribution transparency.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Workspaces**: Manage multiple workspaces, each containing team members, reserved equity pools, contribution areas, and intangible factors.
+- **Team Details**: View and manage team details within a workspace, including member equity distribution across various pools and areas.
+- **Member Management**: Add, edit, and remove team members, as well as manage their equity allocations.
+- **Reports**: Generate detailed reports on team equity, including pie charts and a CSV export option.
+- **Validation**: Ensure the equity distribution is accurate and meets the required conditions (total equity equals 100%, no empty categories, etc.).
+- **Customizable**: Users can add custom equity pools, areas, and intangible factors to the workspace.
+  
+## Prerequisites
 
-### `npm start`
+Before you start, you need to have the following tools installed:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Node.js (preferably v16 or higher)
+- npm (Node Package Manager)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Installation
 
-### `npm test`
+1. **Clone the Repository**:
+    ```bash
+    git clone https://github.com/yourusername/equity-calculator.git
+    cd equity-calculator
+    ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. **Install Dependencies**:
+    ```bash
+    npm install
+    ```
 
-### `npm run build`
+3. **Run the Application**:
+    ```bash
+    npm start
+    ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+The application will be running at `http://localhost:3000` in your browser.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## File Structure
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+.
+├── App.js                  # Main app component, includes routing
+├── TeamContext.js          # Context for managing workspaces and equity data
+├── TeamDetailsPage.js      # Page displaying workspace team details
+├── NewMemberPage.js        # Page for adding or editing a team member
+├── ValidationModal.js      # Modal for validating team data
+├── ReportsPage.js          # Page for generating and displaying reports
+├── WorkspacesPage.js       # Page for managing multiple workspaces
+├── TopBar.js               # Navigation bar for the app
+├── SliderWithButtons.js    # Custom slider component for equity allocation
+├── styles.css              # Global styles for the app
+└── SliderWithButtons.css   # Styles for the slider component
+```
 
-### `npm run eject`
+## How to Use
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Workspaces
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- You can create and manage multiple workspaces by clicking the "Add Workspace" button on the **WorkspacesPage**.
+- Each workspace represents a team or project that can contain members, contribution areas, and reserved equity pools.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Team Details
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+- The **TeamDetailsPage** allows you to view and manage the team members, contribution areas, intangible factors, and equity pools.
+- You can edit each member's contributions, add new areas/factors, and adjust weights to ensure equity is properly allocated.
 
-## Learn More
+### Reports
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- On the **ReportsPage**, you can view a pie chart breakdown of the equity distribution across the project or among team members.
+- The page also allows you to search for team members and export the equity report to CSV for further analysis.
+- The **AI Report** feature will generate a detailed analysis of the equity distribution based on the current data.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Member Management
 
-### Code Splitting
+- You can add new members through the **NewMemberPage** and assign equity contributions across different areas and intangible factors.
+- Edit or delete members directly from the **TeamDetailsPage**.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Validation
 
-### Analyzing the Bundle Size
+- The system validates the equity allocation, ensuring that the total allocation is 100%, no area/factor is left unassigned, and no member has zero equity.
+- The **ValidationModal** will show any errors and allow you to review and fix them before saving the changes.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Technologies Used
 
-### Making a Progressive Web App
+- **React**: Front-end framework for building the user interface.
+- **Chart.js**: Used for rendering pie charts to visualize equity distribution.
+- **React Router**: Handles navigation and routing within the app.
+- **LocalStorage**: Used for persistent data storage across sessions.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Contributing
 
-### Advanced Configuration
+We welcome contributions! If you would like to contribute to this project, follow these steps:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+1. Fork the repository
+2. Create a new branch (`git checkout -b feature-branch`)
+3. Make your changes
+4. Commit your changes (`git commit -am 'Add new feature'`)
+5. Push to the branch (`git push origin feature-branch`)
+6. Open a pull request
 
-### Deployment
+## License
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
