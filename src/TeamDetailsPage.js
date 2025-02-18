@@ -2,43 +2,28 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTeamContext } from "./TeamContext";
-// Same as original: chart.js/auto
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 
 import TopBar from "./TopBar";
 import ValidationModal from "./ValidationModal";
-import CategoryLimitModal from "./CategoryLimitModal";
 import SliderWithButtons from "./SliderWithButtons";
 
 import "./SliderWithButtons.css";
-import "./styles.css"; // Ensure your own styling is imported
+import "./styles.css";
 
 function TeamDetailsPage() {
     const navigate = useNavigate();
     const { workspaceId } = useParams();
-
-    const {
-        getWorkspaceById,
-        updateWorkspace,
-        canAddMoreCustomCategories,
-        incrementCustomCategories
-    } = useTeamContext();
+    const { getWorkspaceById, updateWorkspace } = useTeamContext();
 
     // -----------------------------
-    // STATE
+    // State
     // -----------------------------
-    // Business format
     const [localFormat, setLocalFormat] = useState("");
-
-    // NEW: Reserved Equity Pools (Employee stock pool, board, advisors, etc.)
     const [reservedPools, setReservedPools] = useState([]);
-
-    // Contribution Areas + Intangible Factors
     const [localAreas, setLocalAreas] = useState([]);
     const [intangibleFactors, setIntangibleFactors] = useState([]);
-
-    // Team members
     const [members, setMembers] = useState([]);
 
     // For adding new custom items
@@ -46,9 +31,8 @@ function TeamDetailsPage() {
     const [newArea, setNewArea] = useState("");
     const [newIntangibleFactor, setNewIntangibleFactor] = useState("");
 
-    // Modals & flags
+    // Flags/Modals
     const [showValidation, setShowValidation] = useState(false);
-    const [showCategoryLimitModal, setShowCategoryLimitModal] = useState(false);
     const [hasAdjusted, setHasAdjusted] = useState(false);
 
     // Floating "?" help panel
@@ -67,132 +51,47 @@ function TeamDetailsPage() {
     // For custom tooltips on hover
     const [hoveredItem, setHoveredItem] = useState(null);
 
-    // Example sets of "suggested" items
+    // Suggested items
     const suggestedPools = [
-        {
-            name: "Employee Stock Pool",
-            tooltip: "Shares reserved for employee grants or options"
-        },
-        {
-            name: "Independent Directors",
-            tooltip: "Equity allocated for independent board directors"
-        },
-        {
-            name: "Third Party Advisors and Specialists",
-            tooltip: "External advisors providing specialized guidance"
-        },
-        {
-            name: "Potential Investors",
-            tooltip: "Equity earmarked for future or potential investors"
-        },
-        {
-            name: "Others",
-            tooltip: "Any other reserved pool not covered above"
-        },
+        { name: "Employee Stock Pool", tooltip: "Shares reserved for employee grants or options" },
+        { name: "Independent Directors", tooltip: "Equity allocated for independent board directors" },
+        { name: "Third Party Advisors and Specialists", tooltip: "External advisors providing specialized guidance" },
+        { name: "Potential Investors", tooltip: "Equity earmarked for future or potential investors" },
+        { name: "Others", tooltip: "Any other reserved pool not covered above" },
     ];
 
     const suggestedAreas = [
-        {
-            name: "Monetary Capital Contributions",
-            tooltip: "Direct cash injections or ongoing funding commitments"
-        },
-        {
-            name: "Non-Monetary Tangible Contributions",
-            tooltip: "Office space, equipment, or other physical resources provided"
-        },
-        {
-            name: "Corporate Operation Contributions",
-            tooltip: "Daily operations, management, team-building, problem-solving, etc."
-        },
-        {
-            name: "Product & Service Development",
-            tooltip: "R&D efforts, MVP creation, or technical implementations"
-        },
-        {
-            name: "Market & Customer Outreach",
-            tooltip: "Marketing, sales, user acquisition, securing early adopters"
-        },
-        {
-            name: "Business Development & Partnerships",
-            tooltip: "Forming strategic deals, negotiating with suppliers or agencies"
-        },
-        {
-            name: "Fundraising & Future Expansions",
-            tooltip: "Planning/investing effort for upcoming financing rounds, new partner integration"
-        },
-        {
-            name: "Future Expansion & Fundraising",
-            tooltip: "Planning for future investment rounds, expansions, or new partner integration"
-        },
+        { name: "Monetary Capital Contributions", tooltip: "Direct cash injections or ongoing funding" },
+        { name: "Non-Monetary Tangible Contributions", tooltip: "Office space, equipment, or other resources" },
+        { name: "Corporate Operation Contributions", tooltip: "Daily operations, management, problem-solving, etc." },
+        { name: "Product & Service Development", tooltip: "R&D efforts, MVP creation, or technical implementations" },
+        { name: "Market & Customer Outreach", tooltip: "Marketing, sales, user acquisition, etc." },
+        { name: "Business Development & Partnerships", tooltip: "Negotiating deals, forming strategic partnerships" },
+        { name: "Fundraising & Future Expansions", tooltip: "Planning for next financing round or expansions" },
+        { name: "Future Expansion & Fundraising", tooltip: "Similar to above; example duplication for paging" },
     ];
 
     const suggestedIntangibles = [
-        {
-            name: "Control & Governance",
-            tooltip: "Leadership, vision-setting, high-level decision-making, risk-bearing appetite"
-        },
-        {
-            name: "Business Idea Ownership",
-            tooltip: "Who originated the core concept or IP behind the venture"
-        },
-        {
-            name: "Founder Reputation & Personal Brand",
-            tooltip: "Industry influence, credibility, or celebrity status"
-        },
-        {
-            name: "Skill Sets & Expertise",
-            tooltip: "Specialized know-how, track record of successful businesses, advanced degrees"
-        },
-        {
-            name: "Network & Connections",
-            tooltip: "Existing market channels, personal referrals, strategic relationships"
-        },
-        {
-            name: "Intellectual Capital",
-            tooltip: "Patents, trademarks, academic literature, or proprietary processes contributed"
-        },
-        {
-            name: "Team-Building & Emotional Intelligence",
-            tooltip: "Ability to attract talent, manage conflicts, and foster a positive culture"
-        },
-        {
-            name: "Innovation & Creativity",
-            tooltip: "New product ideas, forward-thinking solutions, and unique problem-solving approaches"
-        },
-        {
-            name: "Solo Work Prior to Team Formation",
-            tooltip: "Milestones or prototypes completed individually before co-founders joined"
-        },
-        {
-            name: "Idea Maturity",
-            tooltip: "How fleshed-out the concept was—prototypes, research, patents—before the team"
-        },
-        {
-            name: "Family or Personal Loans/Credibility",
-            tooltip: "Funds or endorsements from family/personal networks that bootstrap the company"
-        },
-        {
-            name: "Customer & Partner Acquisitions",
-            tooltip: "Early pilot users, key contracts, or major business partners brought onboard"
-        },
-        {
-            name: "Future Availability Commitment",
-            tooltip: "Pledging more dedicated time or full-time involvement at a later stage"
-        },
-        {
-            name: "Past Success Track Record",
-            tooltip: "History of having founded or scaled successful ventures in the past"
-        },
-        {
-            name: "Key-Man Risk & Founder Dependency",
-            tooltip: "Whether the venture depends heavily on one person’s presence or expertise"
-        },
+        { name: "Control & Governance", tooltip: "Leadership, high-level decisions, risk-bearing" },
+        { name: "Business Idea Ownership", tooltip: "Who originated the core concept behind the venture" },
+        { name: "Founder Reputation & Personal Brand", tooltip: "Industry influence, credibility, or celebrity status" },
+        { name: "Skill Sets & Expertise", tooltip: "Specialized know-how, advanced degrees, proven track record" },
+        { name: "Network & Connections", tooltip: "Existing channels, personal referrals, strategic relationships" },
+        { name: "Intellectual Capital", tooltip: "Patents, proprietary processes, or crucial IP" },
+        { name: "Team-Building & Emotional Intelligence", tooltip: "Ability to attract talent, manage conflicts, etc." },
+        { name: "Innovation & Creativity", tooltip: "Forward-thinking solutions, unique problem-solving approaches" },
+        { name: "Solo Work Prior to Team Formation", tooltip: "Work done by a founder before team formed" },
+        { name: "Idea Maturity", tooltip: "How fleshed-out the concept was—prototypes, research, etc." },
+        { name: "Family or Personal Loans/Credibility", tooltip: "Funds or endorsements from personal networks" },
+        { name: "Customer & Partner Acquisitions", tooltip: "Early pilot users, major partner contracts" },
+        { name: "Future Availability Commitment", tooltip: "Promising more time or full-time involvement later" },
+        { name: "Past Success Track Record", tooltip: "Having scaled successful ventures in the past" },
+        { name: "Key-Man Risk & Founder Dependency", tooltip: "Heavily reliant on one person's presence/expertise" },
     ];
 
     // Fetch workspace
     const workspace = getWorkspaceById(workspaceId);
 
-    // Load data on mount or when workspace changes
     useEffect(() => {
         if (workspace) {
             setLocalFormat(workspace.format || "");
@@ -214,9 +113,8 @@ function TeamDetailsPage() {
     }
 
     // -----------------------------
-    // HELPER + HANDLERS
+    // Helper + Handlers
     // -----------------------------
-    // Summation of reserved + areas + intangible must be 100
     function getTotalAllocation(rPools, areasArr, factorsArr) {
         const sumReserved = rPools.reduce((acc, r) => acc + r.weight, 0);
         const sumAreas = areasArr.reduce((acc, a) => acc + a.weight, 0);
@@ -226,14 +124,13 @@ function TeamDetailsPage() {
 
     const totalAllocation = getTotalAllocation(reservedPools, localAreas, intangibleFactors).toFixed(2);
 
-    // -----------------------------
     // Reserved Pools
-    // -----------------------------
     function handleReservedWeightChange(idx, newWeight) {
         setHasAdjusted(true);
         const updated = [...reservedPools];
         updated[idx].weight = Number(newWeight);
 
+        // Prevent going over 100% total
         if (getTotalAllocation(updated, localAreas, intangibleFactors) > 100) {
             const overflow = getTotalAllocation(updated, localAreas, intangibleFactors) - 100;
             updated[idx].weight = Math.max(updated[idx].weight - overflow, 0);
@@ -245,7 +142,7 @@ function TeamDetailsPage() {
         if (reservedPools.some((r) => r.name === poolName)) return;
 
         if (!hasAdjusted) {
-            // even distribution
+            // Even distribution if user hasn’t manually tweaked anything yet
             const countAll = reservedPools.length + localAreas.length + intangibleFactors.length + 1;
             const newWeight = parseFloat((100 / countAll).toFixed(2));
 
@@ -271,6 +168,7 @@ function TeamDetailsPage() {
         }
 
         if (!hasAdjusted) {
+            // Even distribution if user hasn’t manually tweaked
             const countAll = reservedPools.length + localAreas.length + intangibleFactors.length + 1;
             const newWeight = parseFloat((100 / countAll).toFixed(2));
 
@@ -295,14 +193,13 @@ function TeamDetailsPage() {
         setReservedPools(updated);
     }
 
-    // -----------------------------
     // Contribution Areas
-    // -----------------------------
     function handleAreaWeightChange(idx, newWeight) {
         setHasAdjusted(true);
         const updatedAreas = [...localAreas];
         updatedAreas[idx].weight = Number(newWeight);
 
+        // Prevent going over 100% total
         if (getTotalAllocation(reservedPools, updatedAreas, intangibleFactors) > 100) {
             const overflow = getTotalAllocation(reservedPools, updatedAreas, intangibleFactors) - 100;
             updatedAreas[idx].weight = Math.max(updatedAreas[idx].weight - overflow, 0);
@@ -314,8 +211,8 @@ function TeamDetailsPage() {
         if (localAreas.some((a) => a.name === areaName)) return;
 
         if (!hasAdjusted) {
-            const newTotal = reservedPools.length + localAreas.length + intangibleFactors.length + 1;
-            const newWeight = parseFloat((100 / newTotal).toFixed(2));
+            const newCount = reservedPools.length + localAreas.length + intangibleFactors.length + 1;
+            const newWeight = parseFloat((100 / newCount).toFixed(2));
 
             const updPools = reservedPools.map((rp) => ({ ...rp, weight: newWeight }));
             const updAreas = localAreas.map((a) => ({ ...a, weight: newWeight }));
@@ -332,10 +229,6 @@ function TeamDetailsPage() {
 
     function handleAddCustomArea() {
         if (!newArea.trim()) return;
-        if (!canAddMoreCustomCategories()) {
-            setShowCategoryLimitModal(true);
-            return;
-        }
         const lower = newArea.trim().toLowerCase();
         if (localAreas.some((a) => a.name.toLowerCase() === lower)) {
             setNewArea("");
@@ -343,8 +236,8 @@ function TeamDetailsPage() {
         }
 
         if (!hasAdjusted) {
-            const newTotal = reservedPools.length + localAreas.length + intangibleFactors.length + 1;
-            const newWeight = parseFloat((100 / newTotal).toFixed(2));
+            const newCount = reservedPools.length + localAreas.length + intangibleFactors.length + 1;
+            const newWeight = parseFloat((100 / newCount).toFixed(2));
 
             const updPools = reservedPools.map((rp) => ({ ...rp, weight: newWeight }));
             const updAreas = localAreas.map((a) => ({ ...a, weight: newWeight }));
@@ -358,7 +251,6 @@ function TeamDetailsPage() {
             setLocalAreas((prev) => [...prev, { name: newArea.trim(), weight: 0 }]);
         }
 
-        incrementCustomCategories();
         setNewArea("");
     }
 
@@ -368,14 +260,13 @@ function TeamDetailsPage() {
         setLocalAreas(updated);
     }
 
-    // -----------------------------
     // Intangible Factors
-    // -----------------------------
     function handleFactorWeightChange(idx, newWeight) {
         setHasAdjusted(true);
         const updatedFactors = [...intangibleFactors];
         updatedFactors[idx].weight = Number(newWeight);
 
+        // Prevent going over 100% total
         if (getTotalAllocation(reservedPools, localAreas, updatedFactors) > 100) {
             const overflow = getTotalAllocation(reservedPools, localAreas, updatedFactors) - 100;
             updatedFactors[idx].weight = Math.max(updatedFactors[idx].weight - overflow, 0);
@@ -387,8 +278,8 @@ function TeamDetailsPage() {
         if (intangibleFactors.some((f) => f.name === factorName)) return;
 
         if (!hasAdjusted) {
-            const newTotal = reservedPools.length + localAreas.length + intangibleFactors.length + 1;
-            const newWeight = parseFloat((100 / newTotal).toFixed(2));
+            const newCount = reservedPools.length + localAreas.length + intangibleFactors.length + 1;
+            const newWeight = parseFloat((100 / newCount).toFixed(2));
 
             const updPools = reservedPools.map((rp) => ({ ...rp, weight: newWeight }));
             const updAreas = localAreas.map((a) => ({ ...a, weight: newWeight }));
@@ -412,8 +303,8 @@ function TeamDetailsPage() {
         }
 
         if (!hasAdjusted) {
-            const newTotal = reservedPools.length + localAreas.length + intangibleFactors.length + 1;
-            const newWeight = parseFloat((100 / newTotal).toFixed(2));
+            const newCount = reservedPools.length + localAreas.length + intangibleFactors.length + 1;
+            const newWeight = parseFloat((100 / newCount).toFixed(2));
 
             const updPools = reservedPools.map((rp) => ({ ...rp, weight: newWeight }));
             const updAreas = localAreas.map((a) => ({ ...a, weight: newWeight }));
@@ -440,7 +331,6 @@ function TeamDetailsPage() {
     // Save + Validate
     // -----------------------------
     function handleUpdate() {
-        // Must sum up to exactly 100
         const totalNow = Math.round(getTotalAllocation(reservedPools, localAreas, intangibleFactors));
         if (totalNow !== 100) {
             alert("Total allocation must equal 100%");
@@ -449,7 +339,6 @@ function TeamDetailsPage() {
         const updatedWs = {
             ...workspace,
             format: localFormat,
-            // This merges the new reservedPools into the workspace
             reservedPools,
             areas: localAreas,
             intangibleFactors,
@@ -462,6 +351,7 @@ function TeamDetailsPage() {
         handleUpdate();
         setShowValidation(true);
     }
+
     function closeValidation() {
         setShowValidation(false);
     }
@@ -497,7 +387,6 @@ function TeamDetailsPage() {
         currentAreaPage,
         pageSizeAreas
     );
-
     const { pageItems: factorsPage, totalCount: totalFactorsFound } = getFilteredPageData(
         suggestedIntangibles,
         searchFactor,
@@ -506,8 +395,7 @@ function TeamDetailsPage() {
     );
 
     // -----------------------------
-    // Chart data for the entire workspace
-    // (reservedPools + areas + intangibleFactors)
+    // Overall Pie Chart
     // -----------------------------
     const chartLabels = [
         ...reservedPools.map((r) => r.name),
@@ -624,7 +512,7 @@ function TeamDetailsPage() {
                         border: "1px solid #ccc",
                         padding: "8px",
                         marginBottom: "16px",
-                        borderRadius: "4px"
+                        borderRadius: "4px",
                     }}
                 >
                     <h2>Reserved Equity Pool</h2>
@@ -643,7 +531,7 @@ function TeamDetailsPage() {
                                         marginRight: "8px",
                                         marginBottom: "8px",
                                         padding: "6px 12px",
-                                        backgroundColor: "#14B8A6", // <-- TEAL
+                                        backgroundColor: "#14B8A6",
                                         color: "#fff",
                                         border: "none",
                                         borderRadius: "4px",
@@ -741,20 +629,20 @@ function TeamDetailsPage() {
                     ))}
                 </div>
 
-                {/* CONTRIBUTION AREAS WINDOW */}
+                {/* CONTRIBUTION AREAS */}
                 <div
                     className="areas-window"
                     style={{
                         border: "1px solid #ccc",
                         padding: "8px",
                         marginBottom: "16px",
-                        borderRadius: "4px"
+                        borderRadius: "4px",
                     }}
                 >
                     <h2>Contribution Areas</h2>
 
-                    {/* Search + Pagination for Areas */}
-                    <div style={{marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px"}}>
+                    {/* Search + Pagination */}
+                    <div style={{ marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
                         <input
                             type="text"
                             placeholder="Search contribution areas..."
@@ -764,7 +652,7 @@ function TeamDetailsPage() {
                                 setCurrentAreaPage(0);
                             }}
                             style={{
-                                width: "200px",       // NEW: fixed width
+                                width: "200px",
                                 padding: "6px",
                                 borderRadius: "4px",
                                 border: "1px solid #ccc",
@@ -772,9 +660,9 @@ function TeamDetailsPage() {
                         />
                         <div
                             style={{
-                                marginLeft: "auto",     // makes the buttons ‘stick’ to the right
+                                marginLeft: "auto",
                                 display: "flex",
-                                gap: "8px",             // small spacing between buttons
+                                gap: "8px",
                             }}
                         >
                             <button
@@ -793,141 +681,141 @@ function TeamDetailsPage() {
                                 &gt;
                             </button>
                         </div>
-                        </div>
+                    </div>
 
-                        {/* Paged Suggested Areas + tooltips */}
-                        <div style={{marginBottom: "8px"}}>
-                            {areasPage.map((s) => (
-                                <div
-                                    key={s.name}
-                                    style={{position: "relative", display: "inline-block", marginRight: "8px"}}
-                                    onMouseEnter={() => setHoveredItem(s.name)}
-                                    onMouseLeave={() => setHoveredItem(null)}
+                    {/* Paged Suggested Areas + tooltips */}
+                    <div style={{ marginBottom: "8px" }}>
+                        {areasPage.map((s) => (
+                            <div
+                                key={s.name}
+                                style={{ position: "relative", display: "inline-block", marginRight: "8px" }}
+                                onMouseEnter={() => setHoveredItem(s.name)}
+                                onMouseLeave={() => setHoveredItem(null)}
+                            >
+                                <button
+                                    onClick={() => addSuggestedArea(s.name)}
+                                    style={{
+                                        marginBottom: "8px",
+                                        padding: "6px 12px",
+                                        backgroundColor: "#F26E21",
+                                        color: "#fff",
+                                        border: "none",
+                                        borderRadius: "4px",
+                                        cursor: "pointer",
+                                        transition: "background-color 0.3s",
+                                    }}
+                                    onMouseOver={(e) => {
+                                        e.target.style.backgroundColor = "#d35b19";
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.target.style.backgroundColor = "#F26E21";
+                                    }}
                                 >
-                                    <button
-                                        onClick={() => addSuggestedArea(s.name)}
+                                    {s.name}
+                                </button>
+                                {hoveredItem === s.name && (
+                                    <div
                                         style={{
-                                            marginBottom: "8px",
-                                            padding: "6px 12px",
-                                            backgroundColor: "#F26E21",
-                                            color: "#fff",
-                                            border: "none",
+                                            position: "absolute",
+                                            bottom: "100%",
+                                            left: 0,
+                                            backgroundColor: "#fff",
+                                            border: "1px solid #ccc",
+                                            padding: "6px",
                                             borderRadius: "4px",
-                                            cursor: "pointer",
-                                            transition: "background-color 0.3s",
-                                        }}
-                                        onMouseOver={(e) => {
-                                            e.target.style.backgroundColor = "#d35b19";
-                                        }}
-                                        onMouseOut={(e) => {
-                                            e.target.style.backgroundColor = "#F26E21";
+                                            minWidth: "160px",
+                                            zIndex: 1000,
+                                            boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
                                         }}
                                     >
-                                        {s.name}
-                                    </button>
-                                    {hoveredItem === s.name && (
-                                        <div
-                                            style={{
-                                                position: "absolute",
-                                                bottom: "100%",
-                                                left: 0,
-                                                backgroundColor: "#fff",
-                                                border: "1px solid #ccc",
-                                                padding: "6px",
-                                                borderRadius: "4px",
-                                                minWidth: "160px",
-                                                zIndex: 1000,
-                                                boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                                            }}
-                                        >
-                                            {s.tooltip}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Add Custom Area */}
-                        <div style={{marginBottom: "16px"}}>
-                            <input
-                                type="text"
-                                placeholder="Custom area"
-                                value={newArea}
-                                onChange={(e) => setNewArea(e.target.value)}
-                                style={{
-                                    padding: "6px",
-                                    borderRadius: "4px",
-                                    border: "1px solid #ccc",
-                                    marginRight: "8px",
-                                }}
-                            />
-                            <button
-                                onClick={handleAddCustomArea}
-                                style={{
-                                    padding: "6px 12px",
-                                    backgroundColor: "#3b82f6",
-                                    color: "#fff",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    cursor: "pointer",
-                                    transition: "background-color 0.3s",
-                                }}
-                                onMouseOver={(e) => {
-                                    e.target.style.backgroundColor = "#2563eb";
-                                }}
-                                onMouseOut={(e) => {
-                                    e.target.style.backgroundColor = "#3b82f6";
-                                }}
-                            >
-                                + Add
-                            </button>
-                        </div>
-
-                        {/* Display Areas */}
-                        {localAreas.length === 0 && <p>No contribution areas yet.</p>}
-                        {localAreas.map((area, idx) => (
-                            <div key={idx} style={{marginBottom: "12px", display: "flex", alignItems: "center"}}>
-                                <strong style={{width: "200px"}}>{area.name}</strong>
-                                <SliderWithButtons
-                                    value={area.weight}
-                                    min={0}
-                                    max={100}
-                                    step={1}
-                                    onChange={(val) => handleAreaWeightChange(idx, val)}
-                                />
-                                <button
-                                    onClick={() => handleRemoveArea(idx)}
-                                    style={{
-                                        marginLeft: "12px",
-                                        background: "none",
-                                        border: "none",
-                                        cursor: "pointer",
-                                        fontSize: "20px",
-                                        color: "#ef4444",
-                                        padding: "0",
-                                    }}
-                                    aria-label={`Remove ${area.name}`}
-                                >
-                                    &times;
-                                </button>
+                                        {s.tooltip}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
 
-                    {/* INTANGIBLE FACTORS WINDOW */}
-                    <div
-                        className="factors-window"
-                        style={{
-                            border: "1px solid #ccc",
-                            padding: "8px",
-                            marginBottom: "16px",
-                            borderRadius: "4px"
-                        }}
+                    {/* Add Custom Area */}
+                    <div style={{ marginBottom: "16px" }}>
+                        <input
+                            type="text"
+                            placeholder="Custom area"
+                            value={newArea}
+                            onChange={(e) => setNewArea(e.target.value)}
+                            style={{
+                                padding: "6px",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
+                                marginRight: "8px",
+                            }}
+                        />
+                        <button
+                            onClick={handleAddCustomArea}
+                            style={{
+                                padding: "6px 12px",
+                                backgroundColor: "#3b82f6",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: "4px",
+                                cursor: "pointer",
+                                transition: "background-color 0.3s",
+                            }}
+                            onMouseOver={(e) => {
+                                e.target.style.backgroundColor = "#2563eb";
+                            }}
+                            onMouseOut={(e) => {
+                                e.target.style.backgroundColor = "#3b82f6";
+                            }}
+                        >
+                            + Add
+                        </button>
+                    </div>
+
+                    {/* Display Areas */}
+                    {localAreas.length === 0 && <p>No contribution areas yet.</p>}
+                    {localAreas.map((area, idx) => (
+                        <div key={idx} style={{ marginBottom: "12px", display: "flex", alignItems: "center" }}>
+                            <strong style={{ width: "200px" }}>{area.name}</strong>
+                            <SliderWithButtons
+                                value={area.weight}
+                                min={0}
+                                max={100}
+                                step={1}
+                                onChange={(val) => handleAreaWeightChange(idx, val)}
+                            />
+                            <button
+                                onClick={() => handleRemoveArea(idx)}
+                                style={{
+                                    marginLeft: "12px",
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    fontSize: "20px",
+                                    color: "#ef4444",
+                                    padding: "0",
+                                }}
+                                aria-label={`Remove ${area.name}`}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+                {/* INTANGIBLE FACTORS */}
+                <div
+                    className="factors-window"
+                    style={{
+                        border: "1px solid #ccc",
+                        padding: "8px",
+                        marginBottom: "16px",
+                        borderRadius: "4px",
+                    }}
                 >
                     <h2>Intangible Factors</h2>
 
                     {/* Search + Pagination */}
-                    <div style={{marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px"}}>
+                    <div style={{ marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
                         <input
                             type="text"
                             placeholder="Search intangible factors..."
@@ -937,7 +825,7 @@ function TeamDetailsPage() {
                                 setCurrentFactorPage(0);
                             }}
                             style={{
-                                width: "200px",       // NEW: fixed width
+                                width: "200px",
                                 padding: "6px",
                                 borderRadius: "4px",
                                 border: "1px solid #ccc",
@@ -945,16 +833,16 @@ function TeamDetailsPage() {
                         />
                         <div
                             style={{
-                                marginLeft: "auto",     // makes the buttons ‘stick’ to the right
+                                marginLeft: "auto",
                                 display: "flex",
-                                gap: "8px",             // small spacing between buttons
+                                gap: "8px",
                             }}
                         >
                             <button
                                 onClick={() => setCurrentFactorPage(Math.max(currentFactorPage - 1, 0))}
                                 disabled={currentFactorPage === 0}
                                 style={{
-                                    backgroundColor: "#8B5CF6",  // match intangible factor color
+                                    backgroundColor: "#8B5CF6",
                                     color: "#fff",
                                     padding: "6px 12px",
                                     border: "none",
@@ -962,8 +850,12 @@ function TeamDetailsPage() {
                                     cursor: "pointer",
                                     transition: "background-color 0.3s",
                                 }}
-                                onMouseOver={(e) => { e.target.style.backgroundColor = "#7C3AED"; }}
-                                onMouseOut={(e) => { e.target.style.backgroundColor = "#8B5CF6"; }}
+                                onMouseOver={(e) => {
+                                    e.target.style.backgroundColor = "#7C3AED";
+                                }}
+                                onMouseOut={(e) => {
+                                    e.target.style.backgroundColor = "#8B5CF6";
+                                }}
                             >
                                 &lt;
                             </button>
@@ -974,149 +866,152 @@ function TeamDetailsPage() {
                                 }}
                                 disabled={currentFactorPage >= Math.ceil(totalFactorsFound / pageSizeFactors) - 1}
                                 style={{
-                                    backgroundColor: "#8B5CF6",  // match intangible factor color
+                                    backgroundColor: "#8B5CF6",
                                     color: "#fff",
                                     padding: "6px 12px",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                    cursor: "pointer",
-                                    transition: "background-color 0.3s",
-                                }}
-                                onMouseOver={(e) => { e.target.style.backgroundColor = "#7C3AED"; }}
-                                onMouseOut={(e) => { e.target.style.backgroundColor = "#8B5CF6"; }}
-                            >
-                                &gt;
-                            </button>
-                        </div>
-                        </div>
-
-                        {/* Paged Suggested Intangible Factors with Custom Tooltips */}
-                        <div style={{marginBottom: "8px"}}>
-                            {factorsPage.map((f) => (
-                                <div
-                                    key={f.name}
-                                    style={{position: "relative", display: "inline-block", marginRight: "8px"}}
-                                    onMouseEnter={() => setHoveredItem(f.name)}
-                                    onMouseLeave={() => setHoveredItem(null)}
-                                >
-                                    <button
-                                        onClick={() => addSuggestedIntangibleFactor(f.name)}
-                                        style={{
-                                            marginBottom: "8px",
-                                            padding: "6px 12px",
-                                            backgroundColor: "#8B5CF6",
-                                            color: "#fff",
-                                            border: "none",
-                                            borderRadius: "4px",
-                                            cursor: "pointer",
-                                            transition: "background-color 0.3s",
-                                        }}
-                                        onMouseOver={(e) => {
-                                            e.target.style.backgroundColor = "#7C3AED";
-                                        }}
-                                        onMouseOut={(e) => {
-                                            e.target.style.backgroundColor = "#8B5CF6";
-                                        }}
-                                    >
-                                        {f.name}
-                                    </button>
-
-                                    {hoveredItem === f.name && (
-                                        <div
-                                            style={{
-                                                position: "absolute",
-                                                bottom: "100%",
-                                                left: 0,
-                                                backgroundColor: "#fff",
-                                                border: "1px solid #ccc",
-                                                padding: "6px",
-                                                borderRadius: "4px",
-                                                minWidth: "160px",
-                                                zIndex: 1000,
-                                                boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                                            }}
-                                        >
-                                            {f.tooltip}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Add Custom Intangible Factor */}
-                        <div style={{marginBottom: "16px"}}>
-                            <input
-                                type="text"
-                                placeholder="Custom intangible factor"
-                                value={newIntangibleFactor}
-                                onChange={(e) => setNewIntangibleFactor(e.target.value)}
-                                style={{
-                                    padding: "6px",
-                                    borderRadius: "4px",
-                                    border: "1px solid #ccc",
-                                    marginRight: "8px",
-                                }}
-                            />
-                            <button
-                                onClick={handleAddCustomIntangibleFactor}
-                                style={{
-                                    padding: "6px 12px",
-                                    backgroundColor: "#3b82f6",
-                                    color: "#fff",
                                     border: "none",
                                     borderRadius: "4px",
                                     cursor: "pointer",
                                     transition: "background-color 0.3s",
                                 }}
                                 onMouseOver={(e) => {
-                                    e.target.style.backgroundColor = "#2563eb";
+                                    e.target.style.backgroundColor = "#7C3AED";
                                 }}
                                 onMouseOut={(e) => {
-                                    e.target.style.backgroundColor = "#3b82f6";
+                                    e.target.style.backgroundColor = "#8B5CF6";
                                 }}
                             >
-                                + Add
+                                &gt;
                             </button>
                         </div>
+                    </div>
 
-                        {/* Display Intangible Factors */}
-                        {intangibleFactors.length === 0 && <p>No intangible factors yet.</p>}
-                        {intangibleFactors.map((factor, idx) => (
-                            <div key={idx} style={{marginBottom: "12px", display: "flex", alignItems: "center"}}>
-                                <strong style={{width: "200px"}}>{factor.name}</strong>
-                                <SliderWithButtons
-                                    value={factor.weight}
-                                    min={0}
-                                    max={100}
-                                    step={1}
-                                    onChange={(val) => handleFactorWeightChange(idx, val)}
-                                />
+                    {/* Paged Suggested Intangible Factors */}
+                    <div style={{ marginBottom: "8px" }}>
+                        {factorsPage.map((f) => (
+                            <div
+                                key={f.name}
+                                style={{ position: "relative", display: "inline-block", marginRight: "8px" }}
+                                onMouseEnter={() => setHoveredItem(f.name)}
+                                onMouseLeave={() => setHoveredItem(null)}
+                            >
                                 <button
-                                    onClick={() => handleRemoveIntangibleFactor(idx)}
+                                    onClick={() => addSuggestedIntangibleFactor(f.name)}
                                     style={{
-                                        marginLeft: "12px",
-                                        background: "none",
+                                        marginBottom: "8px",
+                                        padding: "6px 12px",
+                                        backgroundColor: "#8B5CF6",
+                                        color: "#fff",
                                         border: "none",
+                                        borderRadius: "4px",
                                         cursor: "pointer",
-                                        fontSize: "20px",
-                                        color: "#ef4444",
-                                        padding: "0",
+                                        transition: "background-color 0.3s",
                                     }}
-                                    aria-label={`Remove ${factor.name}`}
+                                    onMouseOver={(e) => {
+                                        e.target.style.backgroundColor = "#7C3AED";
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.target.style.backgroundColor = "#8B5CF6";
+                                    }}
                                 >
-                                    &times;
+                                    {f.name}
                                 </button>
+                                {hoveredItem === f.name && (
+                                    <div
+                                        style={{
+                                            position: "absolute",
+                                            bottom: "100%",
+                                            left: 0,
+                                            backgroundColor: "#fff",
+                                            border: "1px solid #ccc",
+                                            padding: "6px",
+                                            borderRadius: "4px",
+                                            minWidth: "160px",
+                                            zIndex: 1000,
+                                            boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                                        }}
+                                    >
+                                        {f.tooltip}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
 
-                    {/* Total Allocation */}
-                    <div style={{marginTop: "12px"}}>
-                        <strong>Total Allocation:</strong> {totalAllocation}%
-                        {totalAllocation !== "100.00" && (
+                    {/* Add Custom Intangible Factor */}
+                    <div style={{ marginBottom: "16px" }}>
+                        <input
+                            type="text"
+                            placeholder="Custom intangible factor"
+                            value={newIntangibleFactor}
+                            onChange={(e) => setNewIntangibleFactor(e.target.value)}
+                            style={{
+                                padding: "6px",
+                                borderRadius: "4px",
+                                border: "1px solid #ccc",
+                                marginRight: "8px",
+                            }}
+                        />
+                        <button
+                            onClick={handleAddCustomIntangibleFactor}
+                            style={{
+                                padding: "6px 12px",
+                                backgroundColor: "#3b82f6",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: "4px",
+                                cursor: "pointer",
+                                transition: "background-color 0.3s",
+                            }}
+                            onMouseOver={(e) => {
+                                e.target.style.backgroundColor = "#2563eb";
+                            }}
+                            onMouseOut={(e) => {
+                                e.target.style.backgroundColor = "#3b82f6";
+                            }}
+                        >
+                            + Add
+                        </button>
+                    </div>
+
+                    {/* Display Intangible Factors */}
+                    {intangibleFactors.length === 0 && <p>No intangible factors yet.</p>}
+                    {intangibleFactors.map((factor, idx) => (
+                        <div key={idx} style={{ marginBottom: "12px", display: "flex", alignItems: "center" }}>
+                            <strong style={{ width: "200px" }}>{factor.name}</strong>
+                            <SliderWithButtons
+                                value={factor.weight}
+                                min={0}
+                                max={100}
+                                step={1}
+                                onChange={(val) => handleFactorWeightChange(idx, val)}
+                            />
+                            <button
+                                onClick={() => handleRemoveIntangibleFactor(idx)}
+                                style={{
+                                    marginLeft: "12px",
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    fontSize: "20px",
+                                    color: "#ef4444",
+                                    padding: "0",
+                                }}
+                                aria-label={`Remove ${factor.name}`}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Total Allocation */}
+                <div style={{ marginTop: "12px" }}>
+                    <strong>Total Allocation:</strong> {totalAllocation}%
+                    {totalAllocation !== "100.00" && (
                         <span style={{ color: "#ef4444", marginLeft: "8px" }}>
-                            (Total must be exactly 100%)
-                        </span>
+              (Total must be exactly 100%)
+            </span>
                     )}
                 </div>
 
@@ -1138,8 +1033,12 @@ function TeamDetailsPage() {
                             cursor: "pointer",
                             transition: "background-color 0.3s",
                         }}
-                        onMouseOver={(e) => { e.target.style.backgroundColor = "#059669"; }}
-                        onMouseOut={(e) => { e.target.style.backgroundColor = "#10B981"; }}
+                        onMouseOver={(e) => {
+                            e.target.style.backgroundColor = "#059669";
+                        }}
+                        onMouseOut={(e) => {
+                            e.target.style.backgroundColor = "#10B981";
+                        }}
                         disabled={totalAllocation !== "100.00"}
                     >
                         Update
@@ -1155,8 +1054,12 @@ function TeamDetailsPage() {
                             cursor: "pointer",
                             transition: "background-color 0.3s",
                         }}
-                        onMouseOver={(e) => { e.target.style.backgroundColor = "#2563eb"; }}
-                        onMouseOut={(e) => { e.target.style.backgroundColor = "#3b82f6"; }}
+                        onMouseOver={(e) => {
+                            e.target.style.backgroundColor = "#2563eb";
+                        }}
+                        onMouseOut={(e) => {
+                            e.target.style.backgroundColor = "#3b82f6";
+                        }}
                         disabled={totalAllocation !== "100.00"}
                     >
                         Validate
@@ -1246,8 +1149,12 @@ function TeamDetailsPage() {
                                         cursor: "pointer",
                                         transition: "background-color 0.3s",
                                     }}
-                                    onMouseOver={(e) => { e.target.style.backgroundColor = "#2563eb"; }}
-                                    onMouseOut={(e) => { e.target.style.backgroundColor = "#3b82f6"; }}
+                                    onMouseOver={(e) => {
+                                        e.target.style.backgroundColor = "#2563eb";
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.target.style.backgroundColor = "#3b82f6";
+                                    }}
                                 >
                                     Edit
                                 </button>
@@ -1262,8 +1169,12 @@ function TeamDetailsPage() {
                                         cursor: "pointer",
                                         transition: "background-color 0.3s",
                                     }}
-                                    onMouseOver={(e) => { e.target.style.backgroundColor = "#dc2626"; }}
-                                    onMouseOut={(e) => { e.target.style.backgroundColor = "#ef4444"; }}
+                                    onMouseOver={(e) => {
+                                        e.target.style.backgroundColor = "#dc2626";
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.target.style.backgroundColor = "#ef4444";
+                                    }}
                                 >
                                     Delete
                                 </button>
@@ -1284,18 +1195,19 @@ function TeamDetailsPage() {
                         cursor: "pointer",
                         transition: "background-color 0.3s",
                     }}
-                    onMouseOver={(e) => { e.target.style.backgroundColor = "#059669"; }}
-                    onMouseOut={(e) => { e.target.style.backgroundColor = "#10B981"; }}
+                    onMouseOver={(e) => {
+                        e.target.style.backgroundColor = "#059669";
+                    }}
+                    onMouseOut={(e) => {
+                        e.target.style.backgroundColor = "#10B981";
+                    }}
                 >
                     + Add Member
                 </button>
             </div>
 
-            {/* Modals */}
+            {/* Validation Modal */}
             {showValidation && <ValidationModal onClose={closeValidation} workspaceId={workspaceId} />}
-            {showCategoryLimitModal && (
-                <CategoryLimitModal onClose={() => setShowCategoryLimitModal(false)} />
-            )}
         </div>
     );
 }

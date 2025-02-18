@@ -21,7 +21,6 @@ function ReportsPage() {
         );
     }
 
-    // Destructure out the data
     const {
         format,
         reservedPools = [],
@@ -30,12 +29,16 @@ function ReportsPage() {
         members = [],
     } = workspace;
 
-    // 1) Filter members by search term
+    // Filter members by search term
     const filteredMembers = members.filter((m) =>
         m.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // 2) "By Project" chart (reservedPools + areas + intangibleFactors)
+    // -----------------------------
+    // CHART DATA
+    // -----------------------------
+
+    // 1) "By Project" chart: reservedPools + areas + intangibleFactors
     const chartLabels = [
         ...reservedPools.map((p) => p.name),
         ...areas.map((a) => a.name),
@@ -46,7 +49,6 @@ function ReportsPage() {
         ...areas.map((a) => a.weight),
         ...intangibleFactors.map((f) => f.weight),
     ];
-
     const projectData = {
         labels: chartLabels,
         datasets: [
@@ -73,8 +75,7 @@ function ReportsPage() {
         ],
     };
 
-    // 3) "By Team Member (Equity)" CHART
-    // Now includes each member's totalEquity PLUS the reservedPools slices
+    // 2) "By Team Member (Equity)" chart: each member's total + the reservedPools
     const combinedLabels = [
         ...members.map((m) => m.name),
         ...reservedPools.map((rp) => rp.name),
@@ -83,7 +84,6 @@ function ReportsPage() {
         ...members.map((m) => m.totalEquity),
         ...reservedPools.map((rp) => rp.weight),
     ];
-
     const memberData = {
         labels: combinedLabels,
         datasets: [
@@ -110,13 +110,16 @@ function ReportsPage() {
         ],
     };
 
-    // 4) TABLE & CSV: Exclude reservedPools from the columns
+    // -----------------------------
+    // TABLE & CSV
+    // -----------------------------
+    // Combine reservedPools, areas, intangibleFactors as columns in the main table
     const tableLabels = [
+        ...reservedPools.map((rp) => rp.name),
         ...areas.map((a) => a.name),
         ...intangibleFactors.map((f) => f.name),
     ];
 
-    // CSV Export (still skipping reservedPools for the column data)
     function exportToCSV() {
         let csv = "Team Member,";
         tableLabels.forEach((header) => {
@@ -127,6 +130,7 @@ function ReportsPage() {
         filteredMembers.forEach((m) => {
             csv += `${m.name},`;
             tableLabels.forEach((lbl) => {
+                // For reserved pools, members typically have 0 contribution
                 const val = m.contributions[lbl] || 0;
                 csv += `${val}%,`;
             });
@@ -143,6 +147,85 @@ function ReportsPage() {
         document.body.removeChild(link);
     }
 
+    // -----------------------------
+    // AI REPORT FEATURE
+    // -----------------------------
+    const [aiReport, setAiReport] = useState("");
+    const [loadingReport, setLoadingReport] = useState(false);
+
+    async function generateAIReport() {
+        // Build breakdown strings from workspace data
+        const contributionBreakdown = areas
+            .map((a) => `${a.name}: ${a.weight}%`)
+            .join("\n");
+
+        const intangibleBreakdown = intangibleFactors
+            .map((f) => `${f.name}: ${f.weight}%`)
+            .join("\n");
+
+        const teamBreakdown = members
+            .map((m) => {
+                const contribs = Object.entries(m.contributions)
+                    .map(([key, val]) => `  ${key}: ${val}%`)
+                    .join("\n");
+                return `${m.name}:\n${contribs}`;
+            })
+            .join("\n");
+
+        const reservedBreakdown = reservedPools
+            .map((rp) => `${rp.name}: ${rp.weight}%`)
+            .join("\n");
+
+        console.log("Reserved Breakdown:", reservedBreakdown);
+        console.log("contributionBreakdown:", contributionBreakdown);
+        console.log("intangibleBreakdown:", intangibleBreakdown);
+
+        // You can change this question or let users type their own
+        const question = "What is the total equity for each team member?";
+
+        const prompt = `Using the following equity breakdowns, calculate the answer to the question.
+
+Equity breakdown by contribution areas:
+${reservedBreakdown}
+${contributionBreakdown}
+${intangibleBreakdown}
+
+Equity breakdown by team member:
+${teamBreakdown}
+
+Question: ${question}
+
+Hint: Just add up Equity breakdown by team member for each member.
+
+Please provide a detailed explanation along with the final total equity for each team member.
+`;
+
+        console.log("Prompt:", prompt);
+
+        setLoadingReport(true);
+        setAiReport("");
+
+        try {
+            const response = await fetch("http://localhost:5001/api/generate-ai-report", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt }),
+            });
+            if (!response.ok) {
+                throw new Error("API request failed");
+            }
+            const data = await response.json();
+            setAiReport(data.answer);
+        } catch (error) {
+            console.error("Error generating AI report:", error);
+            setAiReport("Error generating AI report. Please try again later.");
+        }
+        setLoadingReport(false);
+    }
+
+    // -----------------------------
+    // RENDER
+    // -----------------------------
     return (
         <div className="wrapper">
             <TopBar />
@@ -150,7 +233,6 @@ function ReportsPage() {
             <h2>{format || "Company / Format"}</h2>
 
             <div className="section" style={{ marginBottom: "1rem" }}>
-                {/* Search + CSV export */}
                 <div style={{ marginBottom: "8px", display: "flex", gap: "8px" }}>
                     <input
                         type="text"
@@ -161,7 +243,7 @@ function ReportsPage() {
                     <button onClick={exportToCSV}>Export to CSV</button>
                 </div>
 
-                {/* TABLE of members' area/factor contributions (no reserved pool columns) */}
+                {/* Main Table with Reserved Pools + Areas + Intangibles as columns */}
                 <table>
                     <thead>
                     <tr>
@@ -177,7 +259,7 @@ function ReportsPage() {
                         <tr key={m.id}>
                             <td>{m.name}</td>
                             {tableLabels.map((lbl) => (
-                                <td key={lbl}>{(m.contributions[lbl] || 0)}%</td>
+                                <td key={lbl}>{(m.contributions[lbl] || 0) + "%"}</td>
                             ))}
                             <td>{m.totalEquity}%</td>
                         </tr>
@@ -185,49 +267,40 @@ function ReportsPage() {
                     </tbody>
                 </table>
 
-                {/* NEW: Reserved Equity Pools table */}
-                {reservedPools.length > 0 && (
-                    <div style={{ marginTop: "2rem" }}>
-                        <h3>Reserved Equity Pools</h3>
-                        <table>
-                            <thead>
-                            <tr>
-                                <th>Pool Name</th>
-                                <th>Weight (%)</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {reservedPools.map((pool) => (
-                                <tr key={pool.name}>
-                                    <td>{pool.name}</td>
-                                    <td>{pool.weight}%</td>
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                {/* AI Report */}
+                <div style={{ marginTop: "2rem" }}>
+                    <button onClick={generateAIReport}>
+                        {loadingReport ? "Generating Report..." : "Generate AI Report"}
+                    </button>
+                    {aiReport && (
+                        <div
+                            style={{
+                                marginTop: "1rem",
+                                padding: "1rem",
+                                backgroundColor: "#f9f9f9",
+                                borderRadius: "6px",
+                                overflowY: "auto",
+                            }}
+                        >
+                            <h3>AI Report</h3>
+                            <pre style={{ whiteSpace: "pre-wrap" }}>{aiReport}</pre>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* CHARTS */}
             <div className="section reports-charts-container">
                 <div className="chart-container">
                     <h3>By Project (Reserved + Areas + Factors)</h3>
                     <div style={{ height: "300px" }}>
-                        <Pie
-                            data={projectData}
-                            options={{ responsive: true, maintainAspectRatio: false }}
-                        />
+                        <Pie data={projectData} options={{ responsive: true, maintainAspectRatio: false }} />
                     </div>
                 </div>
 
                 <div className="chart-container">
                     <h3>By Team Member (Equity)</h3>
                     <div style={{ height: "300px" }}>
-                        <Pie
-                            data={memberData}
-                            options={{ responsive: true, maintainAspectRatio: false }}
-                        />
+                        <Pie data={memberData} options={{ responsive: true, maintainAspectRatio: false }} />
                     </div>
                 </div>
             </div>

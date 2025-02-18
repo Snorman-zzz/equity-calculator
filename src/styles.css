@@ -1,20 +1,17 @@
 /* styles.css */
 
-/*
-  1. GLOBAL RESETS & BASIC STYLES
-*/
+/* 1. GLOBAL RESETS & BASIC STYLES */
 html, body {
     margin: 0;
     padding: 0;
-    font-family: 'Open Sans', sans-serif; /* or a similar modern font */
-    background-color: #FFFFFF; /* Light background */
-    color: #333333;            /* Dark text */
-    min-height: 100vh;         /* ensure full screen coverage */
+    font-family: 'Open Sans', sans-serif;
+    background-color: #FFFFFF;
+    color: #333333;
+    min-height: 100vh;
 }
 
-/* Buttons */
 button {
-    background-color: #F26E21; /* Orange for CTA */
+    background-color: #F26E21;
     color: #FFFFFF;
     border: none;
     border-radius: 6px;
@@ -25,13 +22,10 @@ button {
 }
 
 button:hover {
-    background-color: #d85f1d; /* Darker orange on hover */
+    background-color: #d85f1d;
 }
 
-/*
-  2. LAYOUT WRAPPERS & SECTIONS
-*/
-/* Let the layout fill larger screens using 95% of viewport width (vw) */
+/* 2. LAYOUT WRAPPERS & SECTIONS */
 .wrapper {
     width: 95vw;
     margin: 0 auto;
@@ -46,9 +40,7 @@ button:hover {
     margin-bottom: 24px;
 }
 
-/*
-  3. TOP BAR (NAVY BACKGROUND)
-*/
+/* 3. TOP BAR (NAVY BACKGROUND) */
 .top-bar {
     background-color: #14314E;
     display: flex;
@@ -66,17 +58,13 @@ button:hover {
     background-color: #0c2535;
 }
 
-/*
-  4. HEADINGS
-*/
+/* 4. HEADINGS */
 h1, h2, h3, h4, h5 {
     margin-top: 0;
-    color: #0A99A8; /* Teal heading color */
+    color: #0A99A8;
 }
 
-/*
-  5. VALIDATION MODAL
-*/
+/* 5. VALIDATION MODAL */
 .validation-modal {
     position: fixed;
     top: 20%;
@@ -94,9 +82,7 @@ h1, h2, h3, h4, h5 {
     color: #0A99A8;
 }
 
-/*
-  6. TABLE STYLING
-*/
+/* 6. TABLE STYLING */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -115,14 +101,11 @@ table td {
 table thead {
     background-color: #F2F2F2;
 }
-
 table thead th {
     color: #333333;
 }
 
-/*
-  7. INPUTS & RANGES
-*/
+/* 7. INPUTS & RANGES */
 input[type="text"],
 select {
     padding: 6px;
@@ -132,14 +115,7 @@ select {
     color: #333333;
 }
 
-input[type="range"] {
-    vertical-align: middle;
-    margin-left: 6px;
-}
-
-/*
-  8. MEMBER BOX (FOR EACH TEAM MEMBER)
-*/
+/* 8. MEMBER BOX (FOR EACH TEAM MEMBER) */
 .member-box {
     border: 1px solid #E3E3E3;
     background-color: #FFFFFF;
@@ -154,28 +130,21 @@ input[type="range"] {
     height: auto;
 }
 
-/*
-  9. CHART ROW & CHART CONTAINER
-*/
-
-/* A row container for charts on the Reports page */
+/* 9. CHART ROW & CHART CONTAINER */
 .chart-row {
     display: flex;
-    flex-wrap: wrap; /* allow wrap on smaller screens */
-    gap: 2rem;       /* space between chart containers */
+    flex-wrap: wrap;
+    gap: 2rem;
 }
 
 .chart-container {
-    flex: 1;               /* let it expand in the row */
-    min-width: 300px;      /* ensure it doesn't get too narrow */
-    max-width: 600px;      /* optional upper bound, remove if you want infinite expansion */
+    flex: 1;
+    min-width: 300px;
+    max-width: 600px;
     margin: 16px 0;
-    overflow: visible;     /* don't clip the chart if it overflows */
+    overflow: visible;
 }
 
-/*
-  Make the canvas inside fill container, ensuring chart doesn't clip
-*/
 .chart-container canvas {
     width: 100% !important;
     height: auto !important;
@@ -183,13 +152,7 @@ input[type="range"] {
     display: block;
 }
 
-/*
-  10. RESPONSIVE MEDIA QUERIES
-*/
-
-/*
-  Stack top bar buttons vertically on narrow screens
-*/
+/* 10. RESPONSIVE MEDIA QUERIES */
 @media (max-width: 576px) {
     .top-bar {
         flex-direction: column;
@@ -199,21 +162,9 @@ input[type="range"] {
         margin-bottom: 8px;
         margin-right: 0;
     }
-}
-
-/*
-  Make validation modal 90% width on small screens
-*/
-@media (max-width: 576px) {
     .validation-modal {
         top: 10%;
         left: 5%;
         width: 90%;
     }
 }
-
-/* Utility spacing classes */
-.mt-1 { margin-top: 8px; }
-.mt-2 { margin-top: 16px; }
-.mb-1 { margin-bottom: 8px; }
-.mb-2 { margin-bottom: 16px; }

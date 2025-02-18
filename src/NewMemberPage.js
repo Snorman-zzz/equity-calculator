@@ -1,4 +1,3 @@
-// NewMemberPage.js
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTeamContext } from "./TeamContext";
@@ -10,22 +9,13 @@ import "./styles.css";
 function NewMemberPage() {
     const navigate = useNavigate();
     const { workspaceId, memberId } = useParams();
-
-    const {
-        getWorkspaceById,
-        updateWorkspace,
-        calculateTotalEquity,
-        getRemainingForArea
-    } = useTeamContext();
+    const { getWorkspaceById, updateWorkspace, calculateTotalEquity, getRemainingForArea } = useTeamContext();
 
     const [name, setName] = useState("");
     const [photoUrl, setPhotoUrl] = useState("");
     const [contributions, setContributions] = useState({});
 
-    // Fetch workspace
     const workspace = getWorkspaceById(workspaceId);
-
-    // existingMember
     const existingMember = workspace && memberId
         ? workspace.members.find((m) => m.id === Number(memberId))
         : null;
@@ -36,7 +26,6 @@ function NewMemberPage() {
             setPhotoUrl(existingMember.photoUrl || "");
             setContributions(existingMember.contributions || {});
         } else if (workspace) {
-            // Initialize only from areas + intangibleFactors, NOT from reservedPools
             const initContrib = {};
             workspace.areas.forEach((a) => {
                 initContrib[a.name] = 0;
@@ -68,7 +57,6 @@ function NewMemberPage() {
 
     function handleSaveMember() {
         const total = calculateTotalEquity(contributions);
-
         const newMemberData = {
             id: existingMember ? existingMember.id : Date.now(),
             name,
@@ -91,7 +79,6 @@ function NewMemberPage() {
         navigate(`/team-details/${workspaceId}`);
     }
 
-    // Prepare chart data (only from .areas + .intangibleFactors)
     const chartLabels = [
         ...workspace.areas.map((a) => a.name),
         ...workspace.intangibleFactors.map((f) => f.name),

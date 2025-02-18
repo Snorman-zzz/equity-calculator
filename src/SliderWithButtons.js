@@ -1,23 +1,21 @@
 // SliderWithButtons.js
 import React from "react";
-import "./SliderWithButtons.css"; // Ensure this CSS file is correctly imported
+import "./SliderWithButtons.css";
 
 /**
  * Props:
- * - value: number
- * - min: number
- * - max: number
- * - step: number
- * - onChange: function(newValue)
+ *  - value: number
+ *  - min: number
+ *  - max: number
+ *  - step: number
+ *  - onChange: function(newValue)
  */
 function SliderWithButtons({ value, min, max, step, onChange }) {
-    // Handler for incrementing the value
     const handleIncrement = () => {
         const newValue = Math.min(value + step, max);
         onChange(newValue);
     };
 
-    // Handler for decrementing the value
     const handleDecrement = () => {
         const newValue = Math.max(value - step, min);
         onChange(newValue);
